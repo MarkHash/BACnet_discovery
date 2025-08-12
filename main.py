@@ -1,6 +1,7 @@
 import sys
 import time
 import threading
+from datetime import datetime
 from bacpypes.core import run, stop, deferred, enable_sleeping
 from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.app import BIPSimpleApplication
@@ -9,11 +10,70 @@ from bacpypes.apdu import WhoIsRequest, IAmRequest
 from bacpypes.consolelogging import ConfigArgumentParser
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
+from tkinter as tk
+from tkinter import ttk, scrolledtext
+
 _debug = 0
 _log = ModuleLogger(globals())
 discovered_devices = {}
 DISCOVERY_THREADING_TIME = 30.0
 REPORTING_THREADING_TIME = 60.0
+
+class BACnetGUI:
+    def __init__(self, bacnet_app):
+        self.root = tk.Tk()
+        self.root.title("BACnet Device Discovery")
+        self.root.geometry("900x600")
+
+        # self.bacnet_app = bacnet_app
+
+        # self.style = ttk.Style()
+        # self.style.theme_use('clam')
+
+        self.setup_gui()
+        # self.update_gui_periodically()
+
+    def setup_gui(self):
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        # main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # self.root.columnconfigure(0, weight=1)
+        # self.root.rowconfigure(0, weight=1)
+        # main_frame.columnconfigure(1, weight=1)
+        # main_frame.rowconfigure(2, weight=1)
+
+        title_label = ttk.Label(main_frame, text="BACnet Device Discovery",
+                                font=('Ariel', 14, 'bold'))
+        # title_label.grid(row=0, column=0, columnspan=3, pady=(0, 10))
+        title_label.pack(pady=(0, 20))
+
+        results_label = ttk.Label(main_frame, text="Discovered Devices:")
+        results_label.pack(anchor=tk.W)
+
+        self.results_text = tk.Text(main_frame, height=15, width=60)
+        self.results_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+
+        self.results_text.insert(tk.END, "Click 'Discover Devices' to start scanning...\n")
+
+
+        #Device list frame
+        # list_frame = ttk.LabelFrame(main_frame, text="Discovered Devices", padding="5")
+        # list_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S),
+        #                 padx=(0, 10))
+        # list_frame.columnconfigure(0, weight=1)
+        # list_frame.rowconfigure(0, weight=1)
+    
+    def set_bacnet_app(self, bacnet_app):
+        self.bacnet_app = bacnet_app
+
+    def discover_devices(self):
+        if self.bacnet_app:
+            self.results_text.insert(tk.END, f"\n[{time.strftime('%H:%M:%S')}] Sending WhoIS broadcast...\n")
+            self.results_text.see(tk.END)
+            self.bacnet_app.send_whois()
+
+            self.root.after(3000, self.update_results)
 
 @bacpypes_debugging
 class ThreadWhoIsIAmApplication(BIPSimpleApplication):
