@@ -1,14 +1,17 @@
 import sys
 import time
 import threading
+import traceback
 from datetime import datetime
 from bacpypes.core import run, stop, deferred, enable_sleeping
 from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.local.device import LocalDeviceObject
-from bacpypes.apdu import WhoIsRequest, IAmRequest
+from bacpypes.apdu import WhoIsRequest, IAmRequest, ReadPropertyRequest
 from bacpypes.consolelogging import ConfigArgumentParser
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.iocb import IOCB
+from bacpypes.constructeddata import Array
 
 import tkinter as tk
 from tkinter import ttk, scrolledtext
@@ -16,8 +19,7 @@ from tkinter import ttk, scrolledtext
 _debug = 0
 _log = ModuleLogger(globals())
 discovered_devices = {}
-DISCOVERY_THREADING_TIME = 30.0
-REPORTING_THREADING_TIME = 60.0
+device_points = {}
 
 class BACnetGUI:
     def __init__(self):
@@ -82,7 +84,7 @@ class BACnetGUI:
         if devices:
             for device_id, info in devices.items():
                 last_seen = time.strftime('%H:%M:%S', time.localtime(info['last_seen']))
-                self.results_text.insert(tk.END, f"Device {device_id}: {info['address']} (Vendor: {info['vendor_id']})\n")
+                self.results_text.insert(tk.END, f"Device {device_id}: {info['address']} (Vendor: {info['vendor_id']}) last seen: {last_seen}\n")
                 # print(f"Device {device_id}: {info['address']} (last seen: {last_seen})")
         else:
             self.results_text.insert(tk.END, "No devices found.\n")
@@ -98,36 +100,29 @@ class BACnetGUI:
         self.root.mainloop()
 
 @bacpypes_debugging
-class ThreadWhoIsIAmApplication(BIPSimpleApplication):
+class WhoIsIAmApplication(BIPSimpleApplication):
     def __init__(self, gui_update_callback, *args):
-        if _debug: ThreadWhoIsIAmApplication._debug("__init__%r", args)
+        if _debug: WhoIsIAmApplication._debug("__init__%r", args)
         BIPSimpleApplication.__init__(self, *args)
         self.gui_update_callback = gui_update_callback
 
-        # self.discovery_timer = None
-        # self.status_timer = None
-        # self.running = True
-
-        # self.start_periodic_discovery()
-        # self.start_status_reporting()
-
     def do_IAmRequest(self, apdu):
-        if _debug: ThreadWhoIsIAmApplication._debug("do_IAmRequest %r", apdu)
+        if _debug: WhoIsIAmApplication._debug("do_IAmRequest %r", apdu)
 
         try:
             if not self.request:
-                if _debug: WhoIsIAmApplication._debug("  no pending request")
+                if _debug: WhoIsIAmApplication._debug("no pending request")
 
             elif isinstance(apdu, IAmRequest):
                 print(f"device discovered: {apdu.iAmDeviceIdentifier}")
 
-                device_identifier = apdu.iAmDeviceIdentifier
+                device_id = apdu.iAmDeviceIdentifier
                 max_apdu_length = apdu.maxAPDULengthAccepted
                 segmentation_supported = apdu.segmentationSupported
                 vendor_id = apdu.vendorID
 
                 device_info = {
-                    'device_id': device_identifier[1],
+                    'device_id': device_id[1],
                     'address': str(apdu.pduSource),
                     'max_apdu_length': max_apdu_length,
                     'segmentation_supported': segmentation_supported,
@@ -135,36 +130,119 @@ class ThreadWhoIsIAmApplication(BIPSimpleApplication):
                     'last_seen': time.time()
                 }
 
-                discovered_devices[device_identifier[1]] = device_info
-                print(f"Discovered device: ID={device_identifier[1]}, "
+                discovered_devices[device_id[1]] = device_info
+                print(f"Discovered device: ID={device_id[1]}, "
                         f"Address={apdu.pduSource}, VendorID={vendor_id})")
+                self.read_device_objects(device_id[1])
                 
             if self.gui_update_callback: self.gui_update_callback()
         
         except Exception as e:
             print(f"Error in do_IamRequest: {e}")
 
-    # def start_periodic_discovery(self):
-        
-    #     if _debug: ThreadWhoIsIAmApplication._debug("start_periodic_discovery")
-    #     self.schedule_next_discovery()
+    def read_device_objects(self, device_id):
+        if _debug: WhoIsIAmApplication._debug("read_device_objeccts %r", device_id)
 
-    # def schedule_next_discovery(self):
-    #     # print(f"schedule_next_discovery")
-    #     if self.running:
-    #         # print(f"schedule_next_discovery")
-    #         self.discovery_timer = threading.Timer(DISCOVERY_THREADING_TIME, self.send_whois_and_reschedule)
-    #         self.discovery_timer.daemon = True
-    #         self.discovery_timer.start()
+        try:
+            if device_id not in discovered_devices:
+                print(f"Device {device_id} not found")
+                return
+            
+            device_info = discovered_devices[device_id]
+            device_address = Address(device_info["address"])
 
-    # def send_whois_and_reschedule(self):
-    #     self.send_whois()
-    #     self.schedule_next_discovery()
+            request = ReadPropertyRequest(
+                objectIdentifier=('device', device_id),
+                propertyIdentifier='objectList'
+            )
+            request.pduDestination = device_address
+
+            iocb = IOCB(request)
+
+            self.request_io(iocb)
+            iocb.add_callback(self.do_ReadPropertyACK)
+            print(f"Reading object list from device {device_id}")
+
+        except Exception as e:
+            print(f"Error reading device objects: {e}")
+            traceback.print_exc()
+
+    def do_ReadPropertyACK(self, iocb):
+        if _debug: WhoIsIAmApplication._debug("do_ReadPropertyACK %r", apdu)
+
+        try:
+            if iocb.ioResponse:
+                apdu = iocb.ioResponse
+                device_address = str(apdu.pduSource)
+                device_id = None
+
+                for dev_id, dev_info in discovered_devices.items():
+                    if dev_info['address'] == device_address:
+                        device_id = dev_id
+                        break
+
+                if device_id is None:
+                    print(f"ReadProperty response from unknown device: {device_address}")
+                    return
+
+                if (apdu.objectIdentifier[0] == 'device' and apdu.propertyIdentifier == 'objectList'):
+                    # object_list = apdu.propertyValue.cast_out(Array)
+                    print(f"Processing object list for device {device_id}")
+                    print(f"Property value type: {type(apdu.propertyValue)}")
+                    points = []
+
+
+                    from bacpypes.constructeddata import ArrayOf
+                    from bacpypes.primitivedata import ObjectIdentifier
+
+                    property_value = apdu.propertyValue
+                    if property_value.__class__.__name__ == 'Any':
+                        object_list = property_value.cast_out(ArrayOf(ObjectIdentifier))
+                        print(f"Cast successful, type: {type(object_list)}")
+                    else:
+                        object_list = property_value
+                        print(f"using property value directly, type: {type(object_list)}")
+
+                    for i, obj_item in enumerate(object_list):
+                        if obj_item is None:
+                            continue
+
+                        try: 
+                            print(f"Processing item {i}: {obj_item} (type:{type(obj_item)})")
+
+                            obj_type_name = str(obj_item[0])
+                            obj_instance_num = int(obj_item[1])
+
+                            if obj_type_name and obj_instance_num is not None:
+                                points.append({
+                                    'type': obj_type_name,
+                                    'instance': obj_instance_num,
+                                    'identifier': f"{obj_type_name}:{obj_instance_num}"
+                                })
+                        except Exception as e:
+                            print(f"  Error parsing object {i}: {e}")
+                            continue
+
+                    print(f"---points info for {device_id}")
+                    for point in points:
+                        print(f"identifier: {point['identifier']}")
+                    print(f"-------")
+                       
+
+                    # if self.gui_update_callback:
+                    #     self.gui_update_callback('points_found', {
+                    #     'device_id': device_id,
+                    #     'points': points
+                    # })
+
+        except Exception as e:
+            print(f"Error processing ReadProperty response: {e}")
+            traceback.print_exc()
 
     def send_whois(self):
             """Send a WhoIs erquest as a global broadast"""
             
-            if _debug: ThreadWhoIsIAmApplication._debug("Send WhoIs request")
+            if _debug: WhoIsIAmApplication._debug("Send WhoIs request")
 
             try:
                 request = WhoIsRequest()
@@ -176,29 +254,6 @@ class ThreadWhoIsIAmApplication(BIPSimpleApplication):
 
             except Exception as e:
                 print(f"Error sending WhoIS: {e}")
-
-    # def start_status_reporting(self):
-    #     self.schedule_next_status()
-    
-    # def schedule_next_status(self):
-    #     if self.running:
-    #         self.status_timer = threading.Timer(REPORTING_THREADING_TIME, self.status_report_and_reschedule)
-    #         self.status_timer.daemon = True
-    #         self.status_timer.start()
-    
-    
-    # def status_report_and_reschedule(self):
-    #     self.report_status()
-    #     self.schedule_next_status()
-
-    # def report_status(self):
-    #     devices = self.get_discovered_devices()
-    #     print(f"\n Device discovery status ({len(devices)} devices found)")
-    #     for device_id, info in devices.items():
-    #         last_seen = time.strftime('%H:%M:%S', time.localtime(info['last_seen']))
-    #         print(f"Device {device_id}: {info['address']} (last seen: {last_seen})")
-
-    #     print("="*10)
 
     def get_discovered_devices(self):
         return discovered_devices.copy()
@@ -231,7 +286,7 @@ def main():
         if _debug: _log.debug("   - device object: %r", this_device)
 
         # this_address = Address("192.168.1.5/24")  # Replace with your IP
-        bacnet_app = ThreadWhoIsIAmApplication(gui.gui_update_callback, this_device, args.ini.address)
+        bacnet_app = WhoIsIAmApplication(gui.gui_update_callback, this_device, args.ini.address)
 
         #Initial discovery
         # this_app.send_whois()
@@ -258,7 +313,7 @@ def main():
         # if 'this_app' in locals(): this_app.stop_timers()
         # stop()
         print(f"Error: {e}")
-        import traceback
+        traceback
         traceback.print_exc()
     finally:
         try:
