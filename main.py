@@ -7,11 +7,8 @@ from bacpypes.consolelogging import ConfigArgumentParser
 from bacpypes.core import run, stop, deferred, enable_sleeping
 from bacpypes.local.device import LocalDeviceObject
 
-
 from bacnet_client import BACnetClient
 from gui import BACnetGUI
-
-
 
 def main():
     try:

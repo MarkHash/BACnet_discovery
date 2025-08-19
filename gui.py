@@ -6,7 +6,7 @@ class BACnetGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("BACnet Device Discovery")
-        self.root.geometry("900x600")
+        self.root.geometry("800x600")
 
         self.bacnet_client = None
 
@@ -14,7 +14,6 @@ class BACnetGUI:
         # self.style.theme_use('clam')
 
         self.setup_gui()
-        # self.update_gui_periodically()
 
     def setup_gui(self):
         main_frame = ttk.Frame(self.root, padding="10")
@@ -22,60 +21,125 @@ class BACnetGUI:
 
         title_label = ttk.Label(main_frame, text="BACnet Device Discovery",
                                 font=('Ariel', 14, 'bold'))
-        title_label.pack(pady=(0, 20))
+        title_label.pack(pady=(0, 10))
 
         # Discovery button
-        self.discover_btn = ttk.Button(main_frame, text="Discover Devices",
-                                        command=self.discover_devices)
-        self.discover_btn.pack(pady=(0, 20))
+        self._create_control_buttons(main_frame)
+        # self.discover_btn = ttk.Button(main_frame, text="Discover Devices",
+        #                                 command=self.discover_devices)
+        # self.discover_btn.pack(pady=(0, 20))
 
-        # Results area
-        results_label = ttk.Label(main_frame, text="Discovered Devices:")
-        results_label.pack(anchor=tk.W)
+        # # Results area
+        # results_label = ttk.Label(main_frame, text="Discovered Devices:")
+        # results_label.pack(anchor=tk.W)
 
-        self.results_text = tk.Text(main_frame, height=15, width=60)
-        self.results_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+        # self.results_text = tk.Text(main_frame, height=15, width=60)
+        # self.results_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
 
-        self.results_text.insert(tk.END, "Click 'Discover Devices' to start scanning...\n")
+        # self.results_text.insert(tk.END, "Click 'Discover Devices' to start scanning...\n")
 
+        # notebook for tabs
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        #Device list frame
-        # list_frame = ttk.LabelFrame(main_frame, text="Discovered Devices", padding="5")
-        # list_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S),
-        #                 padx=(0, 10))
-        # list_frame.columnconfigure(0, weight=1)
-        # list_frame.rowconfigure(0, weight=1)
+        self._create_devices_tab()
+        self._create_points_tab()
+        self._create_log_area(main_frame)
     
+    def _create_control_buttons(self, parent):
+        button_frame = ttk.Frame(parent)
+        button_frame.pack(fill=tk.X, pady=(0, 10))
+
+        self.discover_btn = ttk.Button(button_frame, text="Discover Devices", command=self.discover_devices)
+        self.discover_btn.pack(side=tk.LEFT, padx=(0, 10))
+
+        # self.read_points_btn = ttk.Button(button_frame, text="Read Points from Selected", command=self.read_selected_points)
+        self.read_points_btn = ttk.Button(button_frame, text="Read Points from Selected", command=self.discover_devices)
+        self.read_points_btn.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.clear_btn = ttk.Button(button_frame, text="Clear All", command=self.clear_all_data)
+        self.clear_btn.pack(side=tk.LEFT)
+
+    def _create_devices_tab(self):
+        self.devices_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.devices_frame, text="Devices")
+
+        ttk.Label(self.devices_frame, text="Discovered Devices:").pack(anchor=tk.W)
+        self.device_listbox = tk.Listbox(self.devices_frame, height=12)
+        self.device_listbox.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
+
+    def _create_points_tab(self):
+        self.points_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.points_frame, text="Points")
+
+        ttk.Label(self.points_frame, text="Points in Selected Device:").pack(anchor=tk.W)
+
+        columns = ('Type', 'Instance', 'Identifier')
+        self.points_tree = ttk.Treeview(self.points_frame, columns=columns, show='headings', height=15)
+        self.points_tree.heading('Type', text='Object Type')
+        self.points_tree.heading('Instance', text='Instance')
+        self.points_tree.heading('Identifier', text='Full Identifier')
+
+        self.points_tree.column('Type', width=150)
+        self.points_tree.column('Instance', width=100)
+        self.points_tree.column('Identifier', width=200)
+
+        scrollbar = ttk.Scrollbar(self.points_frame, orient=tk.VERTICAL, command=self.points_tree.yview)
+        self.points_tree.configure(yscrollcommand=scrollbar.set)
+
+        self.points_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(5, 10))
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=(5, 10))
+
+    def _create_log_area(self, parent):
+        log_label = ttk.Label(parent, text="Activity Log:")
+        log_label.pack(anchor=tk.W)
+
+        self.log_text = tk.Text(parent, height=8)
+        self.log_text.pack(fill=tk.X, pady=(5, 0))
+
+
     def set_bacnet_client(self, bacnet_client):
         self.bacnet_client = bacnet_client
 
     def discover_devices(self):
         if self.bacnet_client:
-            self.results_text.insert(tk.END, f"\n[{time.strftime('%H:%M:%S')}] Sending WhoIS broadcast...\n")
-            self.results_text.see(tk.END)
+            self.log_message("Sending WhoIs broadcast...")
             self.bacnet_client.send_whois()
 
-            self.root.after(3000, self.update_results)
+            self.root.after(3000, self.update_device_list)
 
-    def update_results(self):
-        devices = self.bacnet_client.get_discovered_devices() if self.bacnet_client else {}
+    def update_device_list(self):
 
-        self.results_text.insert(tk.END, f"\n--- Found {len(devices)} device(s) ---\n")
+        self.device_listbox.delete(0, tk.END)
 
-        if devices:
+        if self.bacnet_client:
+            devices = self.bacnet_client.get_discovered_devices()
+
             for device_id, info in devices.items():
-                last_seen = time.strftime('%H:%M:%S', time.localtime(info['last_seen']))
-                self.results_text.insert(tk.END, f"Device {device_id}: {info['address']} (Vendor: {info['vendor_id']}) last seen: {last_seen}\n")
-                # print(f"Device {device_id}: {info['address']} (last seen: {last_seen})")
-        else:
-            self.results_text.insert(tk.END, "No devices found.\n")
+                points_status = "x Points read" if info.get('points_read', False) else "o Points not read"
+                device_text = f"Device {device_id}: {info['address']} (Vendor: {info['vendor_id']} - {points_status})"
+                self.device_listbox.insert(tk.END, device_text)
+                
+            self.log_message(f"Found {len(devices)} devices(s)")
 
-        self.results_text.insert(tk.END, "---\n")
-        self.results_text.see(tk.END)
+        
+
+    def clear_all_data(self):
+        # clear_devices()
+        # self.update_device_list()
+        # self.update_points_display(None)
+        # self.log_message("All data cleared.")
+        print(f"clear")
 
     def gui_update_callback(self):
         devices = self.bacnet_client.get_discovered_devices() if self.bacnet_client else {}
         print(f"GUI callback: {len(devices)} devices found")
+
+    
+    def log_message(self, message):
+        timestamp = time.strftime('%H:%M:%S')
+        self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
+        self.log_text.see(tk.END)
 
     def run(self):
         self.root.mainloop()

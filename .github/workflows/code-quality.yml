@@ -1,0 +1,39 @@
+name: Code Quality Check
+
+on:
+  push:
+    # Runs on every push to any branch
+  pull_request:
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get the code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13.6'
+
+    - name: Install code quality tools
+      run: |
+        pip install flake8 black isort
+        pip install bacpypes
+
+    - name: Check code formatting with Black
+      run: |
+        echo "Checking if code is properly formatted..."
+        black --check --diff .
+
+    - name: Check import organization
+      run: |
+        echo "Checking if imports are organized..."
+        isort --check-only --diff .
+
+    - name: Check for common errors with flake8
+      run: |
+        echo "Looking for common Python errors..."
+        flake8 . --count --statistics

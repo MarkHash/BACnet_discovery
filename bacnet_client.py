@@ -168,7 +168,3 @@ class BACnetClient(BIPSimpleApplication):
     def get_discovered_devices(self):
         return discovered_devices.copy()
 
-    # def stop_timers(self):
-    #     self.running = False
-    #     if self.discovery_timer: self.discovery_timer.cancel()
-    #     if self.status_timer: self.status_timercancel()
