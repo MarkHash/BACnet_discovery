@@ -2,7 +2,7 @@ import time
 import traceback
 from datetime import datetime
 
-from bacpypes.apdu import IAmRequest, ReadPropertyRequest, WhoIsRequest
+from bacpypes.apdu import ReadPropertyRequest, WhoIsRequest
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.constructeddata import ArrayOf
 from bacpypes.debugging import ModuleLogger, bacpypes_debugging
@@ -46,7 +46,8 @@ class BACnetClient(BIPSimpleApplication):
             discovered_devices[device_id] = device_info
             print(
                 f"Discovered device: ID={device_info['device_id']}, "
-                f"""Address={device_info['address']}, VendorID={device_info['vendor_id']},
+                f"""Address={device_info['address']}, 
+                VendorID={device_info['vendor_id']},
                 discovery_time: {device_info['discovery_time']}"""
             )
             self.read_device_objects(device_id)
@@ -74,7 +75,8 @@ class BACnetClient(BIPSimpleApplication):
 
                 if device_id is None:
                     print(
-                        f"ReadProperty response from unknown device: {device_address}"
+                        f"""ReadProperty response from unknown device: 
+                        {device_address}"""
                     )
                     return
 
@@ -101,25 +103,21 @@ class BACnetClient(BIPSimpleApplication):
                         if obj_item is None:
                             continue
 
-                        try:
-                            print(
-                                f"Processing item {i}: {obj_item} (type:{type(obj_item)})"
+                        print(
+                            f"Processing item {i}: {obj_item} (type:{type(obj_item)})"
+                        )
+
+                        obj_type_name = str(obj_item[0])
+                        obj_instance_num = int(obj_item[1])
+
+                        if obj_type_name and obj_instance_num is not None:
+                            points.append(
+                                {
+                                    "type": obj_type_name,
+                                    "instance": obj_instance_num,
+                                    "identifier": f"{obj_type_name}:{obj_instance_num}",
+                                }
                             )
-
-                            obj_type_name = str(obj_item[0])
-                            obj_instance_num = int(obj_item[1])
-
-                            if obj_type_name and obj_instance_num is not None:
-                                points.append(
-                                    {
-                                        "type": obj_type_name,
-                                        "instance": obj_instance_num,
-                                        "identifier": f"{obj_type_name}:{obj_instance_num}",
-                                    }
-                                )
-                        except Exception as e:
-                            print(f"  Error parsing object {i}: {e}")
-                            continue
 
                     print(f"---points info for {device_id}")
                     for point in points:
