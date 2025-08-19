@@ -1,17 +1,14 @@
 import time
+import traceback
 from datetime import datetime
 
-from bacpypes.pdu import Address, GlobalBroadcast
+from bacpypes.apdu import IAmRequest, ReadPropertyRequest, WhoIsRequest
 from bacpypes.app import BIPSimpleApplication
-from bacpypes.apdu import WhoIsRequest, IAmRequest, ReadPropertyRequest
-
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.constructeddata import Array, ArrayOf
+from bacpypes.debugging import ModuleLogger, bacpypes_debugging
 from bacpypes.iocb import IOCB
-from bacpypes.constructeddata import Array
-from bacpypes.constructeddata import ArrayOf
+from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import ObjectIdentifier
-
-import traceback
 
 _debug = 0
 _log = ModuleLogger(globals())

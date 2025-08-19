@@ -1,10 +1,11 @@
 import sys
-import time
 import threading
+import time
 import traceback
 from datetime import datetime
+
 from bacpypes.consolelogging import ConfigArgumentParser
-from bacpypes.core import run, stop, deferred, enable_sleeping
+from bacpypes.core import deferred, enable_sleeping, run, stop
 from bacpypes.local.device import LocalDeviceObject
 
 from bacnet_client import BACnetClient
