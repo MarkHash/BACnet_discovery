@@ -1,5 +1,4 @@
 import threading
-import time
 import traceback
 
 from bacpypes.consolelogging import ConfigArgumentParser

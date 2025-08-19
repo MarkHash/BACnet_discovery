@@ -46,8 +46,8 @@ class BACnetClient(BIPSimpleApplication):
             discovered_devices[device_id] = device_info
             print(
                 f"Discovered device: ID={device_info['device_id']}, "
-                f"Address={device_info['address']}, VendorID={device_info['vendor_id']},
-                discovery_time: {device_info['discovery_time']}"
+                f"""Address={device_info['address']}, VendorID={device_info['vendor_id']},
+                discovery_time: {device_info['discovery_time']}"""
             )
             self.read_device_objects(device_id)
 

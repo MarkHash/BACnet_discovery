@@ -21,7 +21,9 @@ class BACnetGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         title_label = ttk.Label(
-            main_frame, text="BACnet Device Discovery", font=("Ariel", 14, "bold")
+            main_frame,
+            text="BACnet Device Discovery",
+            font=("Ariel", 14, "bold")
         )
         title_label.pack(pady=(0, 10))
 
@@ -30,15 +32,6 @@ class BACnetGUI:
         # self.discover_btn = ttk.Button(main_frame, text="Discover Devices",
         #                                 command=self.discover_devices)
         # self.discover_btn.pack(pady=(0, 20))
-
-        # # Results area
-        # results_label = ttk.Label(main_frame, text="Discovered Devices:")
-        # results_label.pack(anchor=tk.W)
-
-        # self.results_text = tk.Text(main_frame, height=15, width=60)
-        # self.results_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
-
-        # self.results_text.insert(tk.END, "Click 'Discover Devices' to start scanning...\n")
 
         # notebook for tabs
         self.notebook = ttk.Notebook(main_frame)
@@ -57,7 +50,11 @@ class BACnetGUI:
         )
         self.discover_btn.pack(side=tk.LEFT, padx=(0, 10))
 
-        # self.read_points_btn = ttk.Button(button_frame, text="Read Points from Selected", command=self.read_selected_points)
+        # self.read_points_btn = ttk.Button(
+        #     button_frame, 
+        #     text="Read Points from Selected", 
+        #     command=self.read_selected_points)
+
         self.read_points_btn = ttk.Button(
             button_frame,
             text="Read Points from Selected",
@@ -74,7 +71,9 @@ class BACnetGUI:
         self.devices_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.devices_frame, text="Devices")
 
-        ttk.Label(self.devices_frame, text="Discovered Devices:").pack(anchor=tk.W)
+        ttk.Label(
+            self.devices_frame, 
+            text="Discovered Devices:").pack(anchor=tk.W)
         self.device_listbox = tk.Listbox(self.devices_frame, height=12)
         self.device_listbox.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
 
@@ -99,11 +98,17 @@ class BACnetGUI:
         self.points_tree.column("Identifier", width=200)
 
         scrollbar = ttk.Scrollbar(
-            self.points_frame, orient=tk.VERTICAL, command=self.points_tree.yview
+            self.points_frame,
+            orient=tk.VERTICAL, 
+            command=self.points_tree.yview
         )
         self.points_tree.configure(yscrollcommand=scrollbar.set)
 
-        self.points_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(5, 10))
+        self.points_tree.pack(
+            side=tk.LEFT, 
+            fill=tk.BOTH, 
+            expand=True, 
+            pady=(5, 10))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=(5, 10))
 
     def _create_log_area(self, parent):
@@ -136,7 +141,8 @@ class BACnetGUI:
                     if info.get("points_read", False)
                     else "o Points not read"
                 )
-                device_text = f"Device {device_id}: {info['address']} (Vendor: {info['vendor_id']} - {points_status})"
+                device_text = f"""Device {device_id}: {info['address']} 
+                (Vendor: {info['vendor_id']} - {points_status})"""
                 self.device_listbox.insert(tk.END, device_text)
 
             self.log_message(f"Found {len(devices)} devices(s)")
