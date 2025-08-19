@@ -51,7 +51,7 @@ def main():
     finally:
         try:
             stop()
-        except:
+        except Exception as e:
             pass
 
 
