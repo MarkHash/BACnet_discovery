@@ -131,7 +131,7 @@ class BACnetGUI:
                     if info.get("points_read", False)
                     else "o Points not read"
                 )
-                device_text = f"""Device {device_id}: {info['address']} 
+                device_text = f"""Device {device_id}: {info['address']}
                 (Vendor: {info['vendor_id']} - {points_status})"""
                 self.device_listbox.insert(tk.END, device_text)
 
