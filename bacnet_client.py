@@ -91,12 +91,15 @@ class BACnetClient(BIPSimpleApplication):
 
                     property_value = apdu.propertyValue
                     if property_value.__class__.__name__ == "Any":
-                        object_list = property_value.cast_out(ArrayOf(ObjectIdentifier))
+                        object_list = property_value.cast_out(
+                            ArrayOf(ObjectIdentifier)
+                            )
                         print(f"Cast successful, type: {type(object_list)}")
                     else:
                         object_list = property_value
                         print(
-                            f"using property value directly, type: {type(object_list)}"
+                            f"""using property value directly,
+                             type: {type(object_list)}"""
                         )
 
                     for i, obj_item in enumerate(object_list):
@@ -104,7 +107,8 @@ class BACnetClient(BIPSimpleApplication):
                             continue
 
                         print(
-                            f"Processing item {i}: {obj_item} (type:{type(obj_item)})"
+                            f"""Processing item {i}: {obj_item}
+                             (type:{type(obj_item)})"""
                         )
 
                         obj_type_name = str(obj_item[0])
@@ -115,7 +119,8 @@ class BACnetClient(BIPSimpleApplication):
                                 {
                                     "type": obj_type_name,
                                     "instance": obj_instance_num,
-                                    "identifier": f"{obj_type_name}:{obj_instance_num}",
+                                    "identifier": f"""{obj_type_name}:
+                                    {obj_instance_num}""",
                                 }
                             )
 
@@ -164,7 +169,8 @@ class BACnetClient(BIPSimpleApplication):
             device_address = Address(device_info["address"])
 
             request = ReadPropertyRequest(
-                objectIdentifier=("device", device_id), propertyIdentifier="objectList"
+                objectIdentifier=("device", device_id),
+                propertyIdentifier="objectList"
             )
             request.pduDestination = device_address
 

@@ -52,6 +52,7 @@ def main():
         try:
             stop()
         except Exception as e:
+            print(f"Error: {e}")
             pass
 
 

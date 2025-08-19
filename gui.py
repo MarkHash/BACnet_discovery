@@ -21,7 +21,9 @@ class BACnetGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         title_label = ttk.Label(
-            main_frame, text="BACnet Device Discovery", font=("Ariel", 14, "bold")
+            main_frame,
+            text="BACnet Device Discovery",
+            font=("Ariel", 14, "bold")
         )
         title_label.pack(pady=(0, 10))
 
@@ -44,7 +46,9 @@ class BACnetGUI:
         button_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.discover_btn = ttk.Button(
-            button_frame, text="Discover Devices", command=self.discover_devices
+            button_frame,
+            text="Discover Devices",
+            command=self.discover_devices
         )
         self.discover_btn.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -69,7 +73,8 @@ class BACnetGUI:
         self.devices_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.devices_frame, text="Devices")
 
-        ttk.Label(self.devices_frame, text="Discovered Devices:").pack(anchor=tk.W)
+        ttk.Label(self.devices_frame,
+        text="Discovered Devices:").pack(anchor=tk.W)
         self.device_listbox = tk.Listbox(self.devices_frame, height=12)
         self.device_listbox.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
 
@@ -94,11 +99,16 @@ class BACnetGUI:
         self.points_tree.column("Identifier", width=200)
 
         scrollbar = ttk.Scrollbar(
-            self.points_frame, orient=tk.VERTICAL, command=self.points_tree.yview
+            self.points_frame,
+            orient=tk.VERTICAL,
+            command=self.points_tree.yview
         )
         self.points_tree.configure(yscrollcommand=scrollbar.set)
 
-        self.points_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(5, 10))
+        self.points_tree.pack(side=tk.LEFT,
+        fill=tk.BOTH,
+        expand=True,
+        pady=(5, 10))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=(5, 10))
 
     def _create_log_area(self, parent):
@@ -142,7 +152,7 @@ class BACnetGUI:
         # self.update_device_list()
         # self.update_points_display(None)
         # self.log_message("All data cleared.")
-        print(f"clear")
+        print("clear")
 
     def gui_update_callback(self):
         devices = (
