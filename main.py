@@ -29,7 +29,7 @@ def main():
 
         # this_address = Address("192.168.1.5/24")  # Replace with your IP
         bacnet_client = BACnetClient(
-            gui.gui_update_callback, this_device, args.ini.address
+            gui.gui_callback, this_device, args.ini.address
         )
         gui.set_bacnet_client(bacnet_client)
 

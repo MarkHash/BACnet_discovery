@@ -13,15 +13,16 @@ from bacpypes.primitivedata import ObjectIdentifier
 _debug = 0
 _log = ModuleLogger(globals())
 discovered_devices = {}
+device_points = {}
 
 
 @bacpypes_debugging
 class BACnetClient(BIPSimpleApplication):
-    def __init__(self, gui_update_callback, *args):
+    def __init__(self, gui_callback, *args):
         if _debug:
             BACnetClient._debug("__init__%r", args)
         BIPSimpleApplication.__init__(self, *args)
-        self.gui_update_callback = gui_update_callback
+        self.gui_callback = gui_callback
 
     def do_IAmRequest(self, apdu):
         if _debug:
@@ -46,14 +47,14 @@ class BACnetClient(BIPSimpleApplication):
             discovered_devices[device_id] = device_info
             print(
                 f"Discovered device: ID={device_info['device_id']}, "
-                f"""Address={device_info['address']},
-                VendorID={device_info['vendor_id']},
-                discovery_time: {device_info['discovery_time']}"""
+                f"Address={device_info['address']}," \
+                f"VendorID={device_info['vendor_id']}," \
+                f"discovery_time: {device_info['discovery_time']}"
             )
             self.read_device_objects(device_id)
 
-            if self.gui_update_callback:
-                self.gui_update_callback()
+            if self.gui_callback:
+                self.gui_callback('device_found', device_info)
 
         except Exception as e:
             print(f"Error in do_IamRequest: {e}")
@@ -105,8 +106,8 @@ class BACnetClient(BIPSimpleApplication):
                             continue
 
                         print(
-                            f"""Processing item {i}: {obj_item}
-                             (type:{type(obj_item)})"""
+                            f"Processing item {i}: {obj_item}" \
+                            f" (type:{type(obj_item)})"
                         )
 
                         obj_type_name = str(obj_item[0])
@@ -117,8 +118,8 @@ class BACnetClient(BIPSimpleApplication):
                                 {
                                     "type": obj_type_name,
                                     "instance": obj_instance_num,
-                                    "identifier": f"""{obj_type_name}:
-                                    {obj_instance_num}""",
+                                    "identifier": f"{obj_type_name}:" \
+                                    f"{obj_instance_num}",
                                 }
                             )
 
@@ -126,6 +127,14 @@ class BACnetClient(BIPSimpleApplication):
                     for point in points:
                         print(f"identifier: {point['identifier']}")
                     print("-------")
+
+                    device_points[device_id] = points
+
+                    if self.gui_callback:
+                        self.gui_callback('points_found', {
+                            'device_id': device_id,
+                            'points': points
+                        })
 
                     # if self.gui_update_callback:
                     #     self.gui_update_callback('points_found', {
@@ -149,7 +158,11 @@ class BACnetClient(BIPSimpleApplication):
 
             # deferred(self.request, request)
             self.request(request)
+            timestamp = datetime.now().strftime('%H:%M:%S')
             # print(f"Sent WhoIs broadcast")
+
+            if self.gui_callback:
+                self.gui_callback('whois_sent', timestamp)
 
         except Exception as e:
             print(f"Error sending WhoIs: {e}")
@@ -183,3 +196,6 @@ class BACnetClient(BIPSimpleApplication):
 
     def get_discovered_devices(self):
         return discovered_devices.copy()
+
+    def get_device_points(self, device_id):
+        return device_points.get(device_id, [])

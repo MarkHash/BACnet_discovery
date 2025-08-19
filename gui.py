@@ -10,10 +10,6 @@ class BACnetGUI:
         self.root.geometry("800x600")
 
         self.bacnet_client = None
-
-        # self.style = ttk.Style()
-        # self.style.theme_use('clam')
-
         self.setup_gui()
 
     def setup_gui(self):
@@ -48,16 +44,16 @@ class BACnetGUI:
         )
         self.discover_btn.pack(side=tk.LEFT, padx=(0, 10))
 
-        # self.read_points_btn = ttk.Button(
-        #     button_frame,
-        #     text="Read Points from Selected",
-        #     command=self.read_selected_points)
-
         self.read_points_btn = ttk.Button(
             button_frame,
             text="Read Points from Selected",
-            command=self.discover_devices,
-        )
+            command=self.read_selected_points)
+
+        # self.read_points_btn = ttk.Button(
+        #     button_frame,
+        #     text="Read Points from Selected",
+        #     command=self.discover_devices,
+        # )
         self.read_points_btn.pack(side=tk.LEFT, padx=(0, 10))
 
         self.clear_btn = ttk.Button(
@@ -118,8 +114,35 @@ class BACnetGUI:
 
             self.root.after(3000, self.update_device_list)
 
-    def update_device_list(self):
+    def read_selected_points(self):
+        selection = self.device_listbox.curselection()
+        if not selection:
+            self.log_message("Please select a device first.")
+            return
+        
+        device_text = self.device_listbox.get(selection[0])
+        device_id = int(device_text.split(':')[0].split()[-1])
+        self.log_message(f"Reading points from device {device_id}...")
+        self.bacnet_client.read_device_objects(device_id)
 
+        self.root.after(3000, lambda: self.update_points_display(device_id))
+
+    def update_points_display(self, device_id):
+        for item in self.points_tree.get_children():
+            self.points_tree.delete(item)
+
+        if device_id and self.bacnet_client:
+            points = self.bacnet_client.get_device_points(device_id)
+
+            for point in points:
+                self.points_tree.insert('', tk.END, values=(
+                    point['type'],
+                    point['instance'],
+                    point['identifier']
+                ))
+        self.log_message(F"Device {device_id}: Found {len(points)} points")
+
+    def update_device_list(self):
         self.device_listbox.delete(0, tk.END)
 
         if self.bacnet_client:
@@ -144,11 +167,20 @@ class BACnetGUI:
         # self.log_message("All data cleared.")
         print("clear")
 
-    def gui_update_callback(self):
-        devices = (
-            self.bacnet_client.get_discovered_devices() if self.bacnet_client else {}
-        )
-        print(f"GUI callback: {len(devices)} devices found")
+    def gui_callback(self, event_type, data):
+        if event_type == 'device_found':
+            self.log_message(f"Device found: {data['device_id']} at {data['address']}")
+            self.root.after(100, self.update_device_list)
+        elif event_type == 'points_found':
+            self.log_message(f"Device {data['device_id']}: Found {len(data['points'])} points")
+            self.root.after(100, lambda: self.update_points_display(data['device_id']))
+        elif event_type == 'whois_sent':
+            self.log._message(f"WhoIs broadcast sent at {data}")
+
+        # devices = (
+        #     self.bacnet_client.get_discovered_devices() if self.bacnet_client else {}
+        # )
+        # print(f"GUI callback: {len(devices)} devices found")
 
     def log_message(self, message):
         timestamp = time.strftime("%H:%M:%S")
