@@ -21,9 +21,7 @@ class BACnetGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         title_label = ttk.Label(
-            main_frame,
-            text="BACnet Device Discovery",
-            font=("Ariel", 14, "bold")
+            main_frame, text="BACnet Device Discovery", font=("Ariel", 14, "bold")
         )
         title_label.pack(pady=(0, 10))
 
@@ -46,9 +44,7 @@ class BACnetGUI:
         button_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.discover_btn = ttk.Button(
-            button_frame,
-            text="Discover Devices",
-            command=self.discover_devices
+            button_frame, text="Discover Devices", command=self.discover_devices
         )
         self.discover_btn.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -98,9 +94,7 @@ class BACnetGUI:
         self.points_tree.column("Identifier", width=200)
 
         scrollbar = ttk.Scrollbar(
-            self.points_frame, 
-            orient=tk.VERTICAL, 
-            command=self.points_tree.yview
+            self.points_frame, orient=tk.VERTICAL, command=self.points_tree.yview
         )
         self.points_tree.configure(yscrollcommand=scrollbar.set)
 
