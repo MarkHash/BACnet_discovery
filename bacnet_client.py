@@ -4,7 +4,7 @@ from datetime import datetime
 
 from bacpypes.apdu import IAmRequest, ReadPropertyRequest, WhoIsRequest
 from bacpypes.app import BIPSimpleApplication
-from bacpypes.constructeddata import Array, ArrayOf
+from bacpypes.constructeddata import ArrayOf
 from bacpypes.debugging import ModuleLogger, bacpypes_debugging
 from bacpypes.iocb import IOCB
 from bacpypes.pdu import Address, GlobalBroadcast
@@ -46,7 +46,8 @@ class BACnetClient(BIPSimpleApplication):
             discovered_devices[device_id] = device_info
             print(
                 f"Discovered device: ID={device_info['device_id']}, "
-                f"Address={device_info['address']}, VendorID={device_info['vendor_id']}, discovery_time: {device_info['discovery_time']}"
+                f"Address={device_info['address']}, VendorID={device_info['vendor_id']},
+                discovery_time: {device_info['discovery_time']}"
             )
             self.read_device_objects(device_id)
 
@@ -123,7 +124,7 @@ class BACnetClient(BIPSimpleApplication):
                     print(f"---points info for {device_id}")
                     for point in points:
                         print(f"identifier: {point['identifier']}")
-                    print(f"-------")
+                    print("-------")
 
                     # if self.gui_update_callback:
                     #     self.gui_update_callback('points_found', {

@@ -1,11 +1,9 @@
-import sys
 import threading
 import time
 import traceback
-from datetime import datetime
 
 from bacpypes.consolelogging import ConfigArgumentParser
-from bacpypes.core import deferred, enable_sleeping, run, stop
+from bacpypes.core import enable_sleeping, run, stop
 from bacpypes.local.device import LocalDeviceObject
 
 from bacnet_client import BACnetClient
@@ -47,7 +45,7 @@ def main():
         gui.run()
 
     except KeyboardInterrupt:
-        print(f"\nShutting down...")
+        print("\nShutting down...")
     except Exception as e:
         print(f"Error: {e}")
         traceback.print_exc()
