@@ -28,9 +28,7 @@ def main():
         print(f"Workstation info: {args}")
 
         # this_address = Address("192.168.1.5/24")  # Replace with your IP
-        bacnet_client = BACnetClient(
-            gui.gui_callback, this_device, args.ini.address
-        )
+        bacnet_client = BACnetClient(gui.gui_callback, this_device, args.ini.address)
         gui.set_bacnet_client(bacnet_client)
 
         def run_bacnet():

@@ -47,7 +47,8 @@ class BACnetGUI:
         self.read_points_btn = ttk.Button(
             button_frame,
             text="Read Points from Selected",
-            command=self.read_selected_points)
+            command=self.read_selected_points,
+        )
 
         # self.read_points_btn = ttk.Button(
         #     button_frame,
@@ -119,9 +120,9 @@ class BACnetGUI:
         if not selection:
             self.log_message("Please select a device first.")
             return
-        
+
         device_text = self.device_listbox.get(selection[0])
-        device_id = int(device_text.split(':')[0].split()[-1])
+        device_id = int(device_text.split(":")[0].split()[-1])
         self.log_message(f"Reading points from device {device_id}...")
         self.bacnet_client.read_device_objects(device_id)
 
@@ -135,12 +136,12 @@ class BACnetGUI:
             points = self.bacnet_client.get_device_points(device_id)
 
             for point in points:
-                self.points_tree.insert('', tk.END, values=(
-                    point['type'],
-                    point['instance'],
-                    point['identifier']
-                ))
-        self.log_message(F"Device {device_id}: Found {len(points)} points")
+                self.points_tree.insert(
+                    "",
+                    tk.END,
+                    values=(point["type"], point["instance"], point["identifier"]),
+                )
+        self.log_message(f"Device {device_id}: Found {len(points)} points")
 
     def update_device_list(self):
         self.device_listbox.delete(0, tk.END)
@@ -168,13 +169,15 @@ class BACnetGUI:
         print("clear")
 
     def gui_callback(self, event_type, data):
-        if event_type == 'device_found':
+        if event_type == "device_found":
             self.log_message(f"Device found: {data['device_id']} at {data['address']}")
             self.root.after(100, self.update_device_list)
-        elif event_type == 'points_found':
-            self.log_message(f"Device {data['device_id']}: Found {len(data['points'])} points")
-            self.root.after(100, lambda: self.update_points_display(data['device_id']))
-        elif event_type == 'whois_sent':
+        elif event_type == "points_found":
+            self.log_message(
+                f"Device {data['device_id']}: Found {len(data['points'])} points"
+            )
+            self.root.after(100, lambda: self.update_points_display(data["device_id"]))
+        elif event_type == "whois_sent":
             self.log._message(f"WhoIs broadcast sent at {data}")
 
         # devices = (

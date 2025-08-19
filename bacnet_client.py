@@ -47,14 +47,14 @@ class BACnetClient(BIPSimpleApplication):
             discovered_devices[device_id] = device_info
             print(
                 f"Discovered device: ID={device_info['device_id']}, "
-                f"Address={device_info['address']}," \
-                f"VendorID={device_info['vendor_id']}," \
+                f"Address={device_info['address']},"
+                f"VendorID={device_info['vendor_id']},"
                 f"discovery_time: {device_info['discovery_time']}"
             )
             self.read_device_objects(device_id)
 
             if self.gui_callback:
-                self.gui_callback('device_found', device_info)
+                self.gui_callback("device_found", device_info)
 
         except Exception as e:
             print(f"Error in do_IamRequest: {e}")
@@ -106,7 +106,7 @@ class BACnetClient(BIPSimpleApplication):
                             continue
 
                         print(
-                            f"Processing item {i}: {obj_item}" \
+                            f"Processing item {i}: {obj_item}"
                             f" (type:{type(obj_item)})"
                         )
 
@@ -118,7 +118,7 @@ class BACnetClient(BIPSimpleApplication):
                                 {
                                     "type": obj_type_name,
                                     "instance": obj_instance_num,
-                                    "identifier": f"{obj_type_name}:" \
+                                    "identifier": f"{obj_type_name}:"
                                     f"{obj_instance_num}",
                                 }
                             )
@@ -131,10 +131,9 @@ class BACnetClient(BIPSimpleApplication):
                     device_points[device_id] = points
 
                     if self.gui_callback:
-                        self.gui_callback('points_found', {
-                            'device_id': device_id,
-                            'points': points
-                        })
+                        self.gui_callback(
+                            "points_found", {"device_id": device_id, "points": points}
+                        )
 
                     # if self.gui_update_callback:
                     #     self.gui_update_callback('points_found', {
@@ -158,11 +157,11 @@ class BACnetClient(BIPSimpleApplication):
 
             # deferred(self.request, request)
             self.request(request)
-            timestamp = datetime.now().strftime('%H:%M:%S')
+            timestamp = datetime.now().strftime("%H:%M:%S")
             # print(f"Sent WhoIs broadcast")
 
             if self.gui_callback:
-                self.gui_callback('whois_sent', timestamp)
+                self.gui_callback("whois_sent", timestamp)
 
         except Exception as e:
             print(f"Error sending WhoIs: {e}")
