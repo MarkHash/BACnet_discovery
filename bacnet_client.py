@@ -91,9 +91,7 @@ class BACnetClient(BIPSimpleApplication):
 
                     property_value = apdu.propertyValue
                     if property_value.__class__.__name__ == "Any":
-                        object_list = property_value.cast_out(
-                            ArrayOf(ObjectIdentifier)
-                            )
+                        object_list = property_value.cast_out(ArrayOf(ObjectIdentifier))
                         print(f"Cast successful, type: {type(object_list)}")
                     else:
                         object_list = property_value
@@ -169,8 +167,7 @@ class BACnetClient(BIPSimpleApplication):
             device_address = Address(device_info["address"])
 
             request = ReadPropertyRequest(
-                objectIdentifier=("device", device_id),
-                propertyIdentifier="objectList"
+                objectIdentifier=("device", device_id), propertyIdentifier="objectList"
             )
             request.pduDestination = device_address
 
