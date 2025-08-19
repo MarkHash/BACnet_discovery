@@ -10,6 +10,7 @@ from bacpypes.local.device import LocalDeviceObject
 from bacnet_client import BACnetClient
 from gui import BACnetGUI
 
+
 def main():
     try:
         # -------------------------
@@ -29,7 +30,9 @@ def main():
         print(f"Workstation info: {args}")
 
         # this_address = Address("192.168.1.5/24")  # Replace with your IP
-        bacnet_client = BACnetClient(gui.gui_update_callback, this_device, args.ini.address)
+        bacnet_client = BACnetClient(
+            gui.gui_update_callback, this_device, args.ini.address
+        )
         gui.set_bacnet_client(bacnet_client)
 
         def run_bacnet():
@@ -41,7 +44,7 @@ def main():
         bacnet_thread.start()
 
         gui.run()
-    
+
     except KeyboardInterrupt:
         print(f"\nShutting down...")
     except Exception as e:
@@ -52,6 +55,7 @@ def main():
             stop()
         except:
             pass
+
 
 if __name__ == "__main__":
     main()
