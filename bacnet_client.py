@@ -1,7 +1,7 @@
+import logging
 import time
 import traceback
 from datetime import datetime
-import logging
 
 from bacpypes.apdu import ReadPropertyRequest, WhoIsRequest
 from bacpypes.app import BIPSimpleApplication

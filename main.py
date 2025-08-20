@@ -1,6 +1,6 @@
+import logging
 import threading
 import traceback
-import logging
 
 from bacpypes.consolelogging import ConfigArgumentParser
 from bacpypes.core import enable_sleeping, run, stop
