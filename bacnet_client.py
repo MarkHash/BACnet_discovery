@@ -198,3 +198,10 @@ class BACnetClient(BIPSimpleApplication):
 
     def get_device_points(self, device_id):
         return device_points.get(device_id, [])
+
+    def clear_devices(self):
+        device_count = len(discovered_devices)
+        point_count = sum(len(points) for points in device_points.values())
+        discovered_devices.clear()
+        device_points.clear()
+        return device_count, point_count

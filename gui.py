@@ -2,7 +2,6 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-
 class BACnetGUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -23,17 +22,19 @@ class BACnetGUI:
 
         # Discovery button
         self._create_control_buttons(main_frame)
-        # self.discover_btn = ttk.Button(main_frame, text="Discover Devices",
-        #                                 command=self.discover_devices)
-        # self.discover_btn.pack(pady=(0, 20))
 
         # notebook for tabs
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
+        # Bind tab change event
+        self.notebook.bind("<<NotebookTabChanged>>", self.gui_callback)
+
         self._create_devices_tab()
         self._create_points_tab()
         self._create_log_area(main_frame)
+
+        self.log_message("Ready. Click 'Discover Devices' to start.")
 
     def _create_control_buttons(self, parent):
         button_frame = ttk.Frame(parent)
@@ -49,12 +50,6 @@ class BACnetGUI:
             text="Read Points from Selected",
             command=self.read_selected_points,
         )
-
-        # self.read_points_btn = ttk.Button(
-        #     button_frame,
-        #     text="Read Points from Selected",
-        #     command=self.discover_devices,
-        # )
         self.read_points_btn.pack(side=tk.LEFT, padx=(0, 10))
 
         self.clear_btn = ttk.Button(
@@ -126,6 +121,9 @@ class BACnetGUI:
         self.log_message(f"Reading points from device {device_id}...")
         self.bacnet_client.read_device_objects(device_id)
 
+        self.notebook.select(self.points_frame)
+        self.log_message("Switched to Points tab to show results")
+
         self.root.after(3000, lambda: self.update_points_display(device_id))
 
     def update_points_display(self, device_id):
@@ -141,7 +139,7 @@ class BACnetGUI:
                     tk.END,
                     values=(point["type"], point["instance"], point["identifier"]),
                 )
-        self.log_message(f"Device {device_id}: Found {len(points)} points")
+            self.log_message(f"Device {device_id}: Found {len(points)} points")
 
     def update_device_list(self):
         self.device_listbox.delete(0, tk.END)
@@ -162,13 +160,30 @@ class BACnetGUI:
             self.log_message(f"Found {len(devices)} devices(s)")
 
     def clear_all_data(self):
-        # clear_devices()
-        # self.update_device_list()
-        # self.update_points_display(None)
-        # self.log_message("All data cleared.")
-        print("clear")
+        device_count, point_count = self.bacnet_client.clear_devices()
+        self.update_device_list()
+        self.update_points_display(None)
+        self.log_message(f"Cleared {device_count} devices and {point_count} points")
 
-    def gui_callback(self, event_type, data):
+
+    def gui_callback(self, event_type, data=None):
+        if not self.bacnet_client:
+            return
+
+        current_tab = self.get_current_tab()
+        self.log_message(f"User switched to {current_tab} tab")
+
+        if current_tab == "Devices":
+            devices = self.bacnet_client.get_discovered_devices()
+            self.log_message(f"Devices tab active - showing {len(devices)} devices")
+        elif current_tab == "Points":
+            selection = self.device_listbox.curselection()
+            if selection:
+                device_text = self.device_listbox.get(selection[0])
+                device_id = int(device_text.split(":")[0].split()[-1])
+                points = self.bacnet_client.get_device_points(device_id)
+                self.log_message(f"Points tab active - showing {len(points)} points")
+
         if event_type == "device_found":
             self.log_message(f"Device found: {data['device_id']} at {data['address']}")
             self.root.after(100, self.update_device_list)
@@ -178,7 +193,7 @@ class BACnetGUI:
             )
             self.root.after(100, lambda: self.update_points_display(data["device_id"]))
         elif event_type == "whois_sent":
-            self.log._message(f"WhoIs broadcast sent at {data}")
+            self.log_message(f"WhoIs broadcast sent at {data}")
 
         # devices = (
         #     self.bacnet_client.get_discovered_devices() if self.bacnet_client else {}
@@ -189,6 +204,22 @@ class BACnetGUI:
         timestamp = time.strftime("%H:%M:%S")
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
+
+    def show_devices_tab(self):
+        self.notebook.select(self.devices_frame)
+        self.log_message("Switched to Devices tab")
+
+    def show_points_tab(self):
+        self.notebook.select(self.points_frame)
+        self.log_message("Switched to Points tab")
+
+    def get_current_tab(self):
+        current_tab = self.notebook.select()
+        if current_tab == str(self.devices_frame):
+            return "Devices"
+        elif current_tab == str(self.points_frame):
+            return "Points"
+        return "Unknown"
 
     def run(self):
         self.root.mainloop()
