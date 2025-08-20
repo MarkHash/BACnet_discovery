@@ -10,10 +10,10 @@ from bacnet_client import BACnetClient
 from gui import BACnetGUI
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+
 
 def main():
     try:

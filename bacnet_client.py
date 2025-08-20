@@ -12,11 +12,10 @@ from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import ObjectIdentifier
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 _debug = 0
 _log = ModuleLogger(globals())
 discovered_devices = {}
