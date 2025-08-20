@@ -1,6 +1,7 @@
 import time
 import traceback
 from datetime import datetime
+import logging
 
 from bacpypes.apdu import ReadPropertyRequest, WhoIsRequest
 from bacpypes.app import BIPSimpleApplication
@@ -10,6 +11,12 @@ from bacpypes.iocb import IOCB
 from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import ObjectIdentifier
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger=logging.getLogger(__name__)
 _debug = 0
 _log = ModuleLogger(globals())
 discovered_devices = {}
@@ -29,7 +36,7 @@ class BACnetClient(BIPSimpleApplication):
             BACnetClient._debug("do_IAmRequest %r", apdu)
 
         try:
-            print(f"device discovered: {apdu.iAmDeviceIdentifier}")
+            logger.debug(f"Device discovered: {apdu.iAmDeviceIdentifier}")
 
             device_identifier = apdu.iAmDeviceIdentifier
             vendor_id = apdu.vendorID
@@ -45,7 +52,7 @@ class BACnetClient(BIPSimpleApplication):
             }
 
             discovered_devices[device_id] = device_info
-            print(
+            logger.debug(
                 f"Discovered device: ID={device_info['device_id']}, "
                 f"Address={device_info['address']},"
                 f"VendorID={device_info['vendor_id']},"
@@ -57,7 +64,7 @@ class BACnetClient(BIPSimpleApplication):
                 self.gui_callback("device_found", device_info)
 
         except Exception as e:
-            print(f"Error in do_IamRequest: {e}")
+            logger.error(f"Error in do_IamRequest: {e}")
 
     def process_read_response(self, iocb):
         if _debug:
@@ -75,7 +82,7 @@ class BACnetClient(BIPSimpleApplication):
                         break
 
                 if device_id is None:
-                    print(
+                    logger.info(
                         f"""ReadProperty response from unknown device:
                          {device_address}"""
                     )
@@ -86,29 +93,29 @@ class BACnetClient(BIPSimpleApplication):
                     and apdu.propertyIdentifier == "objectList"
                 ):
                     # object_list = apdu.propertyValue.cast_out(Array)
-                    print(f"Processing object list for device {device_id}")
-                    print(f"Property value type: {type(apdu.propertyValue)}")
+                    logger.debug(f"Processing object list for device {device_id}")
+                    # print(f"Property value type: {type(apdu.propertyValue)}")
                     points = []
 
                     property_value = apdu.propertyValue
                     if property_value.__class__.__name__ == "Any":
                         object_list = property_value.cast_out(ArrayOf(ObjectIdentifier))
-                        print(f"Cast successful, type: {type(object_list)}")
+                        # print(f"Cast successful, type: {type(object_list)}")
                     else:
                         object_list = property_value
-                        print(
-                            f"""using property value directly,
-                             type: {type(object_list)}"""
-                        )
+                        # print(
+                        #     f"""using property value directly,
+                        #      type: {type(object_list)}"""
+                        # )
 
                     for i, obj_item in enumerate(object_list):
                         if obj_item is None:
                             continue
 
-                        print(
-                            f"Processing item {i}: {obj_item}"
-                            f" (type:{type(obj_item)})"
-                        )
+                        # print(
+                        #     f"Processing item {i}: {obj_item}"
+                        #     f" (type:{type(obj_item)})"
+                        # )
 
                         obj_type_name = str(obj_item[0])
                         obj_instance_num = int(obj_item[1])
@@ -123,10 +130,9 @@ class BACnetClient(BIPSimpleApplication):
                                 }
                             )
 
-                    print(f"---points info for {device_id}")
+                    logger.debug(f"---points info for {device_id}")
                     for point in points:
-                        print(f"identifier: {point['identifier']}")
-                    print("-------")
+                        logger.debug(f"identifier: {point['identifier']}")
 
                     device_points[device_id] = points
 
@@ -135,14 +141,8 @@ class BACnetClient(BIPSimpleApplication):
                             "points_found", {"device_id": device_id, "points": points}
                         )
 
-                    # if self.gui_update_callback:
-                    #     self.gui_update_callback('points_found', {
-                    #     'device_id': device_id,
-                    #     'points': points
-                    # })
-
         except Exception as e:
-            print(f"Error processing ReadProperty response: {e}")
+            logger.error(f"Error processing ReadProperty response: {e}")
             traceback.print_exc()
 
     def send_whois(self):
@@ -155,7 +155,6 @@ class BACnetClient(BIPSimpleApplication):
             request = WhoIsRequest()
             request.pduDestination = GlobalBroadcast()
 
-            # deferred(self.request, request)
             self.request(request)
             timestamp = datetime.now().strftime("%H:%M:%S")
             # print(f"Sent WhoIs broadcast")
@@ -164,7 +163,7 @@ class BACnetClient(BIPSimpleApplication):
                 self.gui_callback("whois_sent", timestamp)
 
         except Exception as e:
-            print(f"Error sending WhoIs: {e}")
+            logger.error(f"Error sending WhoIs: {e}")
 
     def read_device_objects(self, device_id):
         if _debug:
@@ -172,7 +171,7 @@ class BACnetClient(BIPSimpleApplication):
 
         try:
             if device_id not in discovered_devices:
-                print(f"Device {device_id} not found")
+                logger.debug(f"Device {device_id} not found")
                 return
 
             device_info = discovered_devices[device_id]
@@ -184,13 +183,12 @@ class BACnetClient(BIPSimpleApplication):
             request.pduDestination = device_address
 
             iocb = IOCB(request)
-
             self.request_io(iocb)
             iocb.add_callback(self.process_read_response)
-            print(f"Reading object list from device {device_id}")
+            logger.debug(f"Reading object list from device {device_id}")
 
         except Exception as e:
-            print(f"Error reading device objects: {e}")
+            logger.error(f"Error reading device objects: {e}")
             traceback.print_exc()
 
     def get_discovered_devices(self):

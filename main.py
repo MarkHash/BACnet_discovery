@@ -1,5 +1,6 @@
 import threading
 import traceback
+import logging
 
 from bacpypes.consolelogging import ConfigArgumentParser
 from bacpypes.core import enable_sleeping, run, stop
@@ -8,6 +9,11 @@ from bacpypes.local.device import LocalDeviceObject
 from bacnet_client import BACnetClient
 from gui import BACnetGUI
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger=logging.getLogger(__name__)
 
 def main():
     try:
@@ -25,7 +31,7 @@ def main():
             segmentationSupported=args.ini.segmentationsupported,
             vendorIdentifier=int(args.ini.vendoridentifier),
         )
-        print(f"Workstation info: {args}")
+        logging.debug(f"Workstation info: {args}")
 
         # this_address = Address("192.168.1.5/24")  # Replace with your IP
         bacnet_client = BACnetClient(gui.gui_callback, this_device, args.ini.address)
@@ -42,15 +48,15 @@ def main():
         gui.run()
 
     except KeyboardInterrupt:
-        print("\nShutting down...")
+        logging.error("\nShutting down...")
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
         traceback.print_exc()
     finally:
         try:
             stop()
         except Exception as e:
-            print(f"Error: {e}")
+            logging.error(f"Error: {e}")
             pass
 
 

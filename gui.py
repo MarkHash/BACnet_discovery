@@ -171,18 +171,18 @@ class BACnetGUI:
             return
 
         current_tab = self.get_current_tab()
-        self.log_message(f"User switched to {current_tab} tab")
+        # self.log_message(f"User switched to {current_tab} tab")
 
         if current_tab == "Devices":
             devices = self.bacnet_client.get_discovered_devices()
-            self.log_message(f"Devices tab active - showing {len(devices)} devices")
+            # self.log_message(f"Devices tab active - showing {len(devices)} devices")
         elif current_tab == "Points":
             selection = self.device_listbox.curselection()
             if selection:
                 device_text = self.device_listbox.get(selection[0])
                 device_id = int(device_text.split(":")[0].split()[-1])
                 points = self.bacnet_client.get_device_points(device_id)
-                self.log_message(f"Points tab active - showing {len(points)} points")
+                # self.log_message(f"Points tab active - showing {len(points)} points")
 
         if event_type == "device_found":
             self.log_message(f"Device found: {data['device_id']} at {data['address']}")
