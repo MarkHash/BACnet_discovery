@@ -2,6 +2,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+
 class BACnetGUI:
     def __init__(self):
         self.root = tk.Tk()
@@ -164,7 +165,6 @@ class BACnetGUI:
         self.update_device_list()
         self.update_points_display(None)
         self.log_message(f"Cleared {device_count} devices and {point_count} points")
-
 
     def gui_callback(self, event_type, data=None):
         if not self.bacnet_client:
